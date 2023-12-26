@@ -14,7 +14,7 @@ std::pair<double_ms_dur, std::vector<Marker>> detect(cv::Mat &inputMat) {
 	std::vector<Marker> detectedMarkers;
 
 	steady_clock::time_point begin = steady_clock::now();
-	auto markers = MarkerDetector::detect(inputMat, 10, MarkerDetector::Dict::APRILTAG_36h11);
+	auto markers = MarkerDetector::detect(inputMat, 10, TagDicts::APRILTAG_36h11);
 	double_ms_dur detectElapsed = steady_clock::now() - begin;
 
 	return {detectElapsed, detectedMarkers};
@@ -32,8 +32,7 @@ int main() {
   for (int i = 0; i < iterations; i++) {
     auto start = high_resolution_clock::now();
 
-    auto markers = aruconano::MarkerDetector::detect(
-        image, 10, aruconano::MarkerDetector::APRILTAG_36h11);
+    auto markers = MarkerDetector::detect(image, 10, TagDicts::APRILTAG_36h11);
 
     auto stop = high_resolution_clock::now();
 
