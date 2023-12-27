@@ -37,6 +37,13 @@ model {
     }
 }
 
+// NativeUtils adds the following OpenCV warning suppression for Linux, but not
+// for macOS
+// https://github.com/opencv/opencv/issues/20269
+nativeUtils.platformConfigs.osxuniversal.cppCompiler.args.add("-Wno-deprecated-anon-enum-enum-conversion")
+
+nativeUtils.platformConfigs.linuxathena.linker.args.add("-Wl,--fatal-warnings")
+
 
 task copyAllOutputs(type: Copy) {
     def outputsFolder = file("$project.buildDir/outputs")
