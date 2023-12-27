@@ -38,8 +38,8 @@ public final class ArucoNanoV5Detector {
             this.id = id;
         }
 
-        private final double[] xCorners;
-        private final double[] yCorners;
+        public final double[] xCorners;
+        public final double[] yCorners;
         public final int id;
     }
 
