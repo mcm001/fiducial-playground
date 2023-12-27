@@ -33,38 +33,20 @@ std::pair<double_ms_dur, std::vector<Marker>> aruco_v5_detect(const cv::Mat &inp
 }
 
 
-void runTestSuite(bool parallel, bool hires, 
+double runTestSuite(bool parallel, bool hires, 
 	std::function<double(const cv::Mat&)> detectFunc, std::string detectName, const int iters = 100) {
-	cv::Mat colorMat = hires ? image_3658px : image_1829px;
 	cv::Mat grayMat = hires ? image_3658px_gray : image_1829px_gray;
-
-	fmt::println("[{}] Loaded image: {} x {}. Paralellization: {}", 
-		detectName, colorMat.cols, colorMat.rows, (parallel ? "ON" : "OFF"));
-	fmt::println("[{}] Running {} iterations for color and grayscale", detectName, iters);
-
+	
 	cv::setNumThreads(parallel ? -1 : 0);
 
-	double colorMeans = 0.0;
 	double grayMeans = 0.0;
-
-	for (int i = 0; i < iters; i++) {
-		double time = detectFunc(colorMat);
-		colorMeans += time;
-	}
-	double colorMean = colorMeans / (double)iters;
-	fmt::println("[{}] Mean (Color): {:.4f}ms", detectName, colorMean);
 
 	for (int i = 0; i < iters; i++) {
 		double time = detectFunc(grayMat);
 		grayMeans += time;
 	}
-
 	double grayMean = grayMeans / (double)iters;
-	double grayDiff = colorMean - grayMean;
-	double grayDiffPct = (grayDiff / colorMean) * 100.0;
-
-	fmt::println("[{}] Mean (Gray): {:.4f}ms", detectName, grayMean);
-	fmt::println("[{}] Perf diff: {:.4f}ms ({:.2f}%)", detectName, grayDiff, grayDiffPct);
+	return grayMean;
 }
 
 struct TestEntry {
@@ -72,10 +54,7 @@ struct TestEntry {
 	bool hires;
 	bool opencv_parallel;
 	std::function<double(const cv::Mat&)> func;
-};
-
-struct TestResult {
-
+	double time;
 };
 
 static auto aruco_v5_detectFunc = [](const cv::Mat &input) {
@@ -96,29 +75,35 @@ static auto opencv_aruco_detectFunc = [](const cv::Mat &input) {
 	steady_clock::time_point begin = steady_clock::now();
 	cv::aruco::detectMarkers(tmp, dict, markers, ids);
 	double_ms_dur detectElapsed = steady_clock::now() - begin;
+
 	return detectElapsed.count();
 };
 
-static const std::vector<TestEntry> testEntries = {
-	{"aruco_v5_1", false, false, aruco_v5_detectFunc},
-	{"aruco_v5_2", true,  false, aruco_v5_detectFunc},
-	{"aruco_v5_3", false, true,  aruco_v5_detectFunc},
-	{"aruco_v5_4", true,  true,  aruco_v5_detectFunc},
-	{"opencv_aruco_1", false, false, opencv_aruco_detectFunc},
-	{"opencv_aruco_2", true,  false, opencv_aruco_detectFunc},
-	{"opencv_aruco_3", false, true,  opencv_aruco_detectFunc},
-	{"opencv_aruco_4", true,  true,  opencv_aruco_detectFunc}
+static std::vector<TestEntry> testEntries = {
+	{"aruco_v5", false, false, aruco_v5_detectFunc},
+	{"aruco_v5", true,  false, aruco_v5_detectFunc},
+	{"aruco_v5", false, true,  aruco_v5_detectFunc},
+	{"aruco_v5", true,  true,  aruco_v5_detectFunc},
+	{"opencv_aruco", false, false, opencv_aruco_detectFunc},
+	{"opencv_aruco", true,  false, opencv_aruco_detectFunc},
+	{"opencv_aruco", false, true,  opencv_aruco_detectFunc},
+	{"opencv_aruco", true,  true,  opencv_aruco_detectFunc}
 };
 
 int main() {
-	// std::cout << cv::getBuildInformation() << std::endl << std::endl;
 	image_1829px = cv::imread("image1.jpg");
 	image_3658px = cv::imread("image1_2x_res.jpg");
 	cv::cvtColor(image_1829px, image_1829px_gray, cv::COLOR_BGR2GRAY);
 	cv::cvtColor(image_3658px, image_3658px_gray, cv::COLOR_BGR2GRAY);
+	cv::Size image_1829px_size = cv::Size{image_1829px.cols, image_1829px.rows};
+	cv::Size image_3658px_size = cv::Size{image_3658px.cols, image_3658px.rows};
 	
-	for(auto &test : testEntries) {
-		runTestSuite(test.opencv_parallel, test.hires, test.func, test.name);
-		fmt::println("Completed test {}\n", test.name);
+	for(TestEntry &test : testEntries) {
+		cv::Size imgSize = test.hires ? image_3658px_size: image_1829px_size;
+		fmt::println("Test - Detector: {}, Img: {} x {} Parallel: {}",
+			test.name, imgSize.width, imgSize.height, (test.opencv_parallel ? "ON" : "OFF"));
+		test.time = runTestSuite(test.opencv_parallel, test.hires, test.func, test.name);
+		
+		fmt::println("Completed test {}. Mean: {:.4f}ms", test.name, test.time);
 	}
 }

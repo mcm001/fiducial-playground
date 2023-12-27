@@ -91,7 +91,7 @@ private:
     static inline  Marker looksLikeProcessMarker( const  Marker &marker);
     static inline  float  linearSampleImage(const cv::Mat &mat,const cv::Point2f &point);
     static inline  int    findMarkerId(const cv::Mat &mat,int &numRotationsNeeded, std::span<const uint64_t> &dictionary);
-    static inline  int    sideLengthOfMarkrer(const std::vector<cv::Point2f>& points);
+    static inline  int    sideLengthOfMarker(const std::vector<cv::Point2f>& points);
 };
 namespace _private {
 struct PerspectiveTransformer{
@@ -172,7 +172,7 @@ std::vector<Marker> MarkerDetector::internalDetect(const cv::Mat &inputMat, unsi
     }
     std::sort(detectedMarkers.begin(), detectedMarkers.end(), [](const Marker &first,const Marker &second){
         if( first.id<second.id) return true;
-        else if( first.id==second.id) return sideLengthOfMarkrer(first)>sideLengthOfMarkrer(second);
+        else if( first.id==second.id) return sideLengthOfMarker(first)>sideLengthOfMarker(second);
         else return false;
     });
     auto uniqueEnd = std::unique(detectedMarkers.begin(), detectedMarkers.end(),
@@ -194,7 +194,7 @@ std::vector<Marker> MarkerDetector::internalDetect(const cv::Mat &inputMat, unsi
     }
     return detectedMarkers;
 }
-int  MarkerDetector::sideLengthOfMarkrer(const std::vector<cv::Point2f>& points)
+int  MarkerDetector::sideLengthOfMarker(const std::vector<cv::Point2f>& points)
 {
     int ret = 0;
     for (size_t i = 0; i < points.size(); i++)
