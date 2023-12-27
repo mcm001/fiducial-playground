@@ -123,7 +123,7 @@ ext.getCurrentArch = {
 }
 
 ext {
-    nativeName = "photonmiscjni"
+    nativeName = "photonaruconano"
 
     main_native_libs = ["opencv_shared"]
 
