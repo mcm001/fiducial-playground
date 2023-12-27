@@ -1,0 +1,89 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-host:
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            artifact-name: Win64
+            architecture: x64
+          - os: macos-12
+            artifact-name: macOS
+            architecture: x64
+          - os: ubuntu-22.04
+            artifact-name: Linux
+
+    name: "Build Host - ${{ matrix.artifact-name }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+      - run: git fetch --tags --force
+      - run: |
+          chmod +x gradlew
+          ./gradlew build
+      - run: ./gradlew publish photon-targeting:publish
+        name: Publish
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+        if: github.event_name == 'push'
+      - uses: actions/upload-artifact@master
+        with:
+          name: built-libs-${{ matrix.artifact-name }}
+          path: build/outputs/*.jar
+
+  build-docker:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - container: wpilib/roborio-cross-ubuntu:2024-22.04
+            artifact-name: Athena
+          - container: wpilib/raspbian-cross-ubuntu:bullseye-22.04
+            artifact-name: Raspbian
+          - container: wpilib/aarch64-cross-ubuntu:bullseye-22.04
+            artifact-name: Aarch64
+
+    runs-on: ubuntu-22.04
+    container: ${{ matrix.container }}
+    name: "Build Docker - ${{ matrix.artifact-name }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Config Git
+        run: |
+          git config --global --add safe.directory /__w/mcm001/fiducial-playground
+      - name: Build PhotonLib
+        run: |
+          chmod +x gradlew
+          ./gradlew build
+      - name: Publish
+        run: |
+          chmod +x gradlew
+          ./gradlew photon-lib:publish
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+        if: github.event_name == 'push'
+      - uses: actions/upload-artifact@master
+        with:
+          name: built-libs-${{ matrix.artifact-name }}
+          path: build/outputs/*.jar
