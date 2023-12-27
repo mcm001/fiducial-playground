@@ -39,8 +39,8 @@ jobs:
       - run: git fetch --tags --force
       - run: |
           chmod +x gradlew
-          ./gradlew build
-      - run: ./gradlew publish photon-targeting:publish
+          ./gradlew build -Ptoolchain-optional-roboRio
+      - run: ./gradlew publish -Ptoolchain-optional-roboRio
         name: Publish
         env:
           ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
@@ -75,11 +75,11 @@ jobs:
       - name: Build PhotonLib
         run: |
           chmod +x gradlew
-          ./gradlew build
+          ./gradlew build -Ptoolchain-optional-roboRio
       - name: Publish
         run: |
           chmod +x gradlew
-          ./gradlew photon-lib:publish
+          ./gradlew publish -Ptoolchain-optional-roboRio
         env:
           ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
         if: github.event_name == 'push'

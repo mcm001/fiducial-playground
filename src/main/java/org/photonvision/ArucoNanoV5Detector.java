@@ -17,24 +17,11 @@
 
 package org.photonvision;
 
-import java.util.Arrays;
-import org.opencv.core.Point;
-
 public final class ArucoNanoV5Detector {
     public static class DetectionResult {
         public DetectionResult(double[] corns, int id) {
-            this.xCorners = new double[]{
-                        corns[0],
-                        corns[2],
-                        corns[4],
-                        corns[6]
-                    };
-            this.yCorners = new double[]{
-                        corns[1],
-                        corns[3],
-                        corns[5],
-                        corns[7]
-                    };
+            this.xCorners = new double[] {corns[0], corns[2], corns[4], corns[6]};
+            this.yCorners = new double[] {corns[1], corns[3], corns[5], corns[7]};
             this.id = id;
         }
 
